@@ -36,7 +36,8 @@ static NSString * STC_Jid = nil;
         STC_Manager = [[NearChatManager alloc]init];
     }else
     {
-        NSLog(@"Jid不能为空");
+        //传入空字符串或长度为0的字符串时，认为当前没有正在通信的联系人
+        NSLog(@"Jid不能为空 或 当前没有正在通信的联系人");
         return nil;
     }
     return STC_Manager;
