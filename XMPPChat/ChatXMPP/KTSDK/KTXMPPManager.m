@@ -22,7 +22,10 @@
 #import "Photo.h"
 
 static const NSString * defaultChatPerson = @"noChatPerson";
-
+@interface KTXMPPManager ()
+/**当前联系人*/
+@property (nonatomic,copy)NSString * nowChatPerson;
+@end
 @implementation KTXMPPManager
 {
     NSUserDefaults * _userDefaults;
@@ -128,6 +131,13 @@ static KTXMPPManager * basisManager = nil;
     //先 连接服务器 再 注册用户密码
     [self connect];
 }
+//设置代理和当前通信联系人
+- (void)setKTXMPPDelegate:(id<KTXMPPManagerDelegate>)delegate nowChatPerson:(NSString *)nowChatPerson {
+    self.delegate = delegate;
+    self.nowChatPerson = nowChatPerson;
+}
+
+
 //获得消息
 -(NSArray *)XMPPMessageRecordWithJid:(NSString *)Jid
 {
@@ -358,11 +368,12 @@ static KTXMPPManager * basisManager = nil;
 - (void)xmppStream:(XMPPStream *)sender didSendMessage:(XMPPMessage *)message
 {
     //消息发送成功并不代表消息发送到对方客户端，而是服务器成功接收
-    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
+    NSString * toJid = message.to.user;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)] && [_nowChatPerson isEqualToString:toJid]) {
         [self.delegate sendMessage:message result:YES error:nil];
+        //TODO:可优化，如果自己建立聊天记录本地数据库的话，可在此处完成聊天记录model模型的赋值
     }
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        NSString * toJid = message.to.user;
         NearChatModel * model = [[NearChatModel alloc]init];
         model.chatPartnerJid = toJid;
         model.xmppBody = message.body;
@@ -387,7 +398,8 @@ static KTXMPPManager * basisManager = nil;
                            3.与服务器断开连接
                            ......
      */
-    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
+    NSString * toJid = message.to.user;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)] && [toJid isEqualToString:_nowChatPerson]) {
         [self.delegate sendMessage:message result:NO error:error.description];
     }
     //TODO:可以做最近聊天记录的存储
@@ -395,7 +407,25 @@ static KTXMPPManager * basisManager = nil;
 //接收消息
 - (void)xmppStream:(XMPPStream *)sender didReceiveMessage:(XMPPMessage *)message
 {
-    //TODO:可以做最近聊天记录的存储
+    
+    NSString * fromJid = message.from.user;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(receiveMessage:)] && [fromJid isEqualToString:_nowChatPerson]) {
+        [self.delegate receiveMessage:message];
+        //TODO:可优化，如果自己建立聊天记录本地数据库的话，可在此处完成聊天记录model模型的赋值
+    }
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        NearChatModel * model = [[NearChatModel alloc]init];
+        model.chatPartnerJid = fromJid;
+        model.xmppBody = message.body;
+        model.chatSign = !_nowChatPerson?:0;
+        if ([NearChatManager defaultManager]) {
+            [[NearChatManager defaultManager]saveNearChatModleWithModel:model];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            //TODO:做一些其他操作，如刷新聊天记录页面
+        });
+    });
+
 }
 #pragma mark -
 #pragma mark - 单点登录
