@@ -16,7 +16,13 @@
 #import "XMPPCapabilities.h"
 #import "GCDAsyncSocket.h"
 #import "XMPPMessage.h"//消息相关
+//聊天记录
+#import "NearChatManager.h"
+//工具
 #import "Photo.h"
+
+static const NSString * defaultChatPerson = @"noChatPerson";
+
 @implementation KTXMPPManager
 {
     NSUserDefaults * _userDefaults;
@@ -54,6 +60,19 @@ static KTXMPPManager * basisManager = nil;
 {
     return [xmppMessageArchivingCoreDataStorage  mainThreadManagedObjectContext];
 }
+
+//设置当前联系人
+- (void)setNowChatPerson:(NSString *)nowChatPerson
+{
+    if (!nowChatPerson || !nowChatPerson.length) {
+        _nowChatPerson = [defaultChatPerson copy];
+    }else{
+        _nowChatPerson = nowChatPerson;
+        [NearChatManager defaultManagerWithJid:nowChatPerson];
+    }
+    
+}
+
 //连接
 - (BOOL)connect
 {
@@ -342,7 +361,22 @@ static KTXMPPManager * basisManager = nil;
     if (self.delegate && [self.delegate respondsToSelector:@selector(sendMessage:result:error:)]) {
         [self.delegate sendMessage:message result:YES error:nil];
     }
-    //TODO:可以做最近聊天记录的存储
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        NSString * toJid = message.to.user;
+        NearChatModel * model = [[NearChatModel alloc]init];
+        model.chatPartnerJid = toJid;
+        model.xmppBody = message.body;
+        model.chatSign = !_nowChatPerson?:0;
+        if ([NearChatManager defaultManager]) {
+            [[NearChatManager defaultManager]saveNearChatModleWithModel:model];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            //TODO:做一些其他操作，如刷新聊天记录页面
+        });
+    });
+
+    
+    
 }
 //消息发送失败
 - (void)xmppStream:(XMPPStream *)sender didFailToSendMessage:(XMPPMessage *)message error:(NSError *)error

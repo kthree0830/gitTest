@@ -42,6 +42,8 @@ typedef NS_ENUM(NSUInteger,KTTMessageType) {
 @interface KTXMPPManager : NSObject
 @property (nonatomic,weak)id<KTXMPPManagerDelegate>delegate;
 @property (nonatomic,readonly)NSManagedObjectContext * messageManageObjectContext;
+/**当前联系人*/
+@property (nonatomic,copy)NSString * nowChatPerson;
 
 //单例
 + (KTXMPPManager *)defaultManager;

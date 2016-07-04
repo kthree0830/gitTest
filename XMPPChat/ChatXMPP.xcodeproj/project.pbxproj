@@ -600,10 +600,10 @@
 				2963514C1C81BB8000B6F529 /* Info.plist */,
 				2963534F1C81BFCB00B6F529 /* KTSDK */,
 				296351491C81BB8000B6F529 /* LaunchScreen.storyboard */,
-				296351441C81BB8000B6F529 /* Main.storyboard */,
 				2963513B1C81BB8000B6F529 /* Supporting Files */,
 				296351411C81BB8000B6F529 /* ViewController.h */,
 				296351421C81BB8000B6F529 /* ViewController.m */,
+				296351441C81BB8000B6F529 /* Main.storyboard */,
 				2963516E1C81BCE600B6F529 /* XMPP */,
 			);
 			path = ChatXMPP;

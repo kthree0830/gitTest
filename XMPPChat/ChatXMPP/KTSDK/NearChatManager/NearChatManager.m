@@ -18,6 +18,7 @@
 #import "FMDatabaseQueue.h"
 #import "FMDatabaseAdditions.h"
 //
+
 static NearChatManager * STC_Manager = nil;
 static NSString * STC_Jid = nil;
 @implementation NearChatManager
